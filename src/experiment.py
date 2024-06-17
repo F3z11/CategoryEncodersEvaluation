@@ -584,13 +584,13 @@ def predict_it(data, model, target):
     if model == 'RF':
         mod = RandomForestClassifier(random_state=42)
     elif model == 'svm':
-        mod = SVC()
+        mod = SVC(random_state=42)
     elif model == 'lgr':
-        mod = LogisticRegression()
+        mod = LogisticRegression(random_state=42)
     elif model == 'nb':
         mod = GaussianNB()
     elif model == 'mlp':
-        mod = MLPClassifier()
+        mod = MLPClassifier(random_state=42)
     elif model == 'knn':
         mod = KNeighborsClassifier()
     elif model == 'dt':
@@ -632,11 +632,11 @@ def predict_it_regr(data, model, target):
     if model == 'RF':
         mod = RandomForestRegressor(random_state=42)
     elif model == 'svm':
-        mod = SVR()
+        mod = SVR(random_state=42)
     elif model == 'lgr':
-        mod = LinearRegression()
+        mod = LinearRegression(random_state=42)
     elif model == 'mlp':
-        mod = MLPRegressor()
+        mod = MLPRegressor(random_state=42)
     elif model == 'knn':
         mod = KNeighborsRegressor()
     elif model == 'dt':
