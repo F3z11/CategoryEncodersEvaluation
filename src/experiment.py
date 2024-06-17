@@ -764,13 +764,13 @@ def final_pip_regr(data):
 
   return results, time_res
 
-'''datasets = []
+datasets = []
 
-datasets.append(pd.read_csv('/home/clerici/tesi/data_def/census.csv'))
+datasets.append(pd.read_csv('../data_clean/class/census.csv'))
 
-datasets.append(pd.read_csv('/home/clerici/tesi/data_def/mushrooms.csv'))
+datasets.append(pd.read_csv('../data_clean/class/mushrooms.csv'))
 
-churn = pd.read_csv('/home/clerici/tesi/data_def/churn.csv')
+churn = pd.read_csv('../data_clean/class/churn.csv')
 
 cols = ['\'number_customer_service_calls\'', '\'state\'', '\'international_plan\'', '\'voice_mail_plan\'', '\'number_customer_service_calls\'']
 for col in cols:
@@ -778,17 +778,17 @@ for col in cols:
 
 datasets.append(churn)
 
-datasets.append(pd.read_csv('/home/clerici/tesi/data_def/germancredit.csv'))
+datasets.append(pd.read_csv('../data_clean/class/germancredit.csv'))
 
-datasets.append(pd.read_csv('/home/clerici/tesi/data_def/breastcancer.csv'))
+datasets.append(pd.read_csv('../data_clean/class/breastcancer.csv'))
 
-datasets.append(pd.read_csv('/home/clerici/tesi/data_def/autism_adult.csv'))
+datasets.append(pd.read_csv('../data_clean/class/autism_adult.csv'))
 
-datasets.append(pd.read_csv('/home/clerici/tesi/data_def/obesity.csv'))
+datasets.append(pd.read_csv('../data_clean/class/obesity.csv'))
 
-datasets.append(pd.read_csv('/home/clerici/tesi/data_def/car.csv'))
+datasets.append(pd.read_csv('../data_clean/class/car.csv'))
 
-cmc = pd.read_csv('/home/clerici/tesi/data_def/cmc.csv')
+cmc = pd.read_csv('../data_clean/class/cmc.csv')
 cols = ['wife_edu', 'husband_edu', 'wife_religion',
        'wife_working', 'husband_occupation', 'standard_of_living_index',
        'media_exposure', 'target']
@@ -797,16 +797,16 @@ for col in cols:
 
 datasets.append(cmc)
 
-datasets.append(pd.read_csv('/home/clerici/tesi/data_def/nursery.csv'))
+datasets.append(pd.read_csv('../data_clean/class/nursery.csv'))
 
 names = ['mush', 'census', 'churn', 'credit', 'breast', 'autism', 'obesity', 'car', 'cmc', 'nursery'] #'census', 'mush', 'churn', 'credit', 'breast', 'autism', 
 d = dict(zip(names, datasets))
 
 for name in d.keys():
   res = final_pip(d[name])
-  res[0].to_csv(f'/home/clerici/tesi/results_12jun/class/metrics/results_{name}.csv', index=False)
-  res[1].to_csv(f'/home/clerici/tesi/results_12jun/class/time/time_{name}.csv', index=False)
-  print(f'{name} done')'''
+  res[0].to_csv(f'../results/res_class/metrics/results_{name}.csv', index=False)
+  res[1].to_csv(f'../results/res_class/time/time_{name}.csv', index=False)
+  print(f'{name} done')
 
 filepaths = glob.glob('/home/clerici/tesi/regr/*.csv')
 
@@ -814,13 +814,9 @@ all_dfs = [pd.read_csv(fp) for fp in filepaths]
 names = ['avocado','baseball', 'cmpc2015', 'forest', 'socmob', 'ukair'] 
 d = dict(zip(names, all_dfs))
 
-"""for name in list(d.keys())[1:]:
+for name in list(d.keys()):
   print(name)
   res = final_pip_regr(d[name])
-  res[0].to_csv(f'/home/clerici/tesi/results_12jun/regr/metrics/results_{name}.csv', index=False)
-  res[1].to_csv(f'/home/clerici/tesi/results_12jun/regr/time/time_{name}.csv', index=False)
-  print(f'{name} done')"""
-
-res = final_pip_regr(d['avocado'])
-res[0].to_csv(f'/home/clerici/tesi/results_12jun/regr/metrics/results_avocado.csv', index=False)
-res[1].to_csv(f'/home/clerici/tesi/results_12jun/regr/time/time_avocado.csv', index=False)
+  res[0].to_csv(f'../results/res_regr/metrics/results_{name}.csv', index=False)
+  res[1].to_csv(f'../results/res_regr/time/time_{name}.csv', index=False)
+  print(f'{name} done')
