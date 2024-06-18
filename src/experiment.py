@@ -29,6 +29,19 @@ warnings.filterwarnings("ignore")
 """
 
 def encode_onehot(df, cat_cols):
+    """
+    Encodes the specified categorical columns in the DataFrame using one-hot encoding.
+
+    Parameters:
+    df (pd.DataFrame): The input DataFrame containing the data to be encoded.
+    cat_cols (list): A list of column names in df that should be encoded.
+
+    Returns:
+    list: A list containing:
+        - df_encoded (pd.DataFrame): The DataFrame with the specified categorical columns replaced by their one-hot encoded equivalents.
+        - end-start (float): The time taken to perform the encoding, in seconds.
+        - dim (float): The ratio of the number of columns in the encoded DataFrame to the number of columns in the original categorical columns.
+    """
 
     encoder = ce.one_hot.OneHotEncoder(return_df = True)
 
@@ -299,6 +312,21 @@ def encode_sim(df, cat_cols):
 """### Supervised methods"""
 
 def encode_mean(train, test, cat_cols):
+    """
+    Encodes the specified categorical columns in the training and testing DataFrames using mean encoding.
+
+    Parameters:
+    train (pd.DataFrame): The training DataFrame containing the data to be encoded.
+    test (pd.DataFrame): The testing DataFrame containing the data to be encoded.
+    cat_cols (list): A list of column names in the DataFrames that should be encoded.
+
+    Returns:
+    list: A list containing:
+        - encoded_train (pd.DataFrame): The training DataFrame with the specified categorical columns replaced by their mean encoded equivalents.
+        - encoded_test (pd.DataFrame): The testing DataFrame with the specified categorical columns replaced by their mean encoded equivalents.
+        - end-start (float): The time taken to perform the encoding, in seconds.
+        - dim (float): The ratio of the number of columns in the encoded training DataFrame to the number of columns in the original categorical columns.
+    """
 
     encoder = fe.MeanEncoder(variables=cat_cols)
 
@@ -504,13 +532,41 @@ def encode_woe(train, test, cat_cols):
     return [encoded_train, encoded_test, end-start, dim]
 
 def column_types(df):
+    """
+    Identifies numeric and categorical columns in a DataFrame.
+
+    Parameters:
+    df (pd.DataFrame): The input DataFrame for which column types are to be identified.
+
+    Returns:
+    tuple: A tuple containing:
+           - num_cols (list): List of column names identified as numeric.
+           - cat_cols (list): List of column names identified as categorical.
+    """
+
     cols = df.columns
     num_cols = df._get_numeric_data().columns.tolist()
     cat_cols = list(set(cols) - set(num_cols))
     if 'target' in cat_cols: cat_cols.remove("target")
+
     return num_cols, cat_cols
 
 def encode_all(df, cat_cols, tipo):
+    """
+    Encodes the categorical columns in the DataFrame using various encoding methods.
+
+    Parameters:
+    df (pd.DataFrame): The input DataFrame containing the data to be encoded.
+    cat_cols (list): A list of column names in df that should be encoded.
+    tipo (str): The type of problem ('class' for classification, 'regr' for regression).
+    seed (int): The seed for random number generation to ensure reproducibility.
+
+    Returns:
+    tuple: A tuple containing:
+        - dict_df (dict): A dictionary with the encoded DataFrames for each encoding method.
+        - times (pd.DataFrame): A DataFrame with the encoding methods, their execution times, and the final dimensions.
+    """
+
     # Factorize target column if necessary
     if tipo == 'class':
       if df['target'].dtype != 'int64':
@@ -580,6 +636,22 @@ def encode_all(df, cat_cols, tipo):
 ### No parameter tuning"""
 
 def predict_it(data, model, target):
+    """
+    Trains and evaluates a classification model on the given data.
+
+    Parameters:
+    data (pd.DataFrame or list of pd.DataFrame): The dataset(s) to be used for training and testing.
+    model (str): The type of model to use.
+    target (str): The name of the target column in the dataset.
+
+    Returns:
+    list: A list containing:
+          - model (str): The name of the model used.
+          - accuracy (float): The accuracy of the model on the test set.
+          - precision (float): The precision of the model on the test set.
+          - recall (float): The recall of the model on the test set.
+          - f1 (float): The F1 score of the model on the test set.
+    """
 
     if model == 'RF':
         mod = RandomForestClassifier(random_state=42)
@@ -625,9 +697,26 @@ def predict_it(data, model, target):
     recall = recall_score(y_test, y_pred, zero_division=0, average='macro')
     f1 = f1_score(y_test, y_pred, zero_division=0, average='macro')
 
-    return [model, accuracy, precision, recall, f1, None]
+    return [model, accuracy, precision, recall, f1]
 
 def predict_it_regr(data, model, target):
+    """
+    Trains and evaluates a regression model on the given data.
+
+    Parameters:
+    data (pd.DataFrame or list of pd.DataFrame): The dataset(s) to be used for training and testing.
+    model (str): The type of model to use.
+    target (str): The name of the target column in the dataset.
+
+    Returns:
+    list: A list containing:
+          - model (str): The name of the model used.
+          - mae (float): The mean absolute error of the model on the test set.
+          - mse (float): The mean squared error of the model on the test set.
+          - rmse (float): The root mean squared error of the model on the test set.
+          - nrmse (float): The normalized root mean squared error of the model on the test set.
+          - r2 (float): The R-squared score of the model on the test set.
+    """
 
     if model == 'RF':
         mod = RandomForestRegressor(random_state=42)
@@ -677,92 +766,127 @@ def predict_it_regr(data, model, target):
     return [model, mae, mse, rmse, nrmse, r2]
 
 def time_standard(time_df):
+    """
+    Standardizes time measurements in a DataFrame using Min-Max scaling and classifies the scaled times into quartiles.
 
-  '''
-  standardize encoding time and compute quartiles in order to assign a class which describes how fast/slow the encoder is
-  '''
+    Parameters:
+    time_df (pd.DataFrame): The input DataFrame containing a 'time' column with time measurements.
 
-  scaler = MinMaxScaler()
-  time_scaled = scaler.fit_transform(time_df['time'].values.reshape(-1, 1))
+    Returns:
+    pd.DataFrame: The DataFrame with two additional columns:
+                  - 'time_norm': The Min-Max scaled time measurements.
+                  - 'class': The classification of scaled time into four quartiles labeled as 'fast', 'medium-fast', 'medium-slow', 'slow'.
+    """
 
-  time_df.insert(2, 'time_norm', time_scaled)
+    scaler = MinMaxScaler()
+    time_scaled = scaler.fit_transform(time_df['time'].values.reshape(-1, 1))
 
-  time_df.insert(3, 'class', pd.qcut(time_df['time_norm'], 4, labels=["fast", "medium-fast", "medium-slow", "slow"]))
+    time_df.insert(2, 'time_norm', time_scaled)
 
-  return time_df
+    time_df.insert(3, 'class', pd.qcut(time_df['time_norm'], 4, labels=["fast", "medium-fast", "medium-slow", "slow"]))
+
+    return time_df
 
 """## Pipeline finale"""
 
 def final_pip(data):
-  cat_cols = column_types(data)[1]
+    """
+    Executes a pipeline for encoding categorical variables, training multiple classification models,
+    and evaluating their performance and time taken for encoding.
 
-  print('encoding categorical variables')
-  enc = encode_all(data, cat_cols, 'class') #encoding datasets with different methods
-  print('Encoding done')
+    Parameters:
+    data (pd.DataFrame): The input DataFrame containing the data to be processed.
 
-  enc_dict = enc[0]
+    Returns:
+    tuple: A tuple containing:
+           - results (pd.DataFrame): A DataFrame with the performance metrics (accuracy, precision, recall, F1) for each model and encoding method.
+           - time_res (pd.DataFrame): A DataFrame with the standardized times for each encoding method along with their final dimensions.
+    """
 
-  times = enc[1]
+    cat_cols = column_types(data)[1]
 
-  #modelling phase
-  results_nb = pd.DataFrame([[key] + predict_it(enc_dict[key], 'nb', 'target') for key in enc_dict.keys()])
+    print('encoding categorical variables')
+    enc = encode_all(data, cat_cols, 'class') #encoding datasets with different methods
+    print('Encoding done')
 
-  results_rf = pd.DataFrame([[key] + predict_it(enc_dict[key], 'RF', 'target') for key in enc_dict.keys()])
+    enc_dict = enc[0]
 
-  results_svm = pd.DataFrame([[key] + predict_it(enc_dict[key], 'svm', 'target') for key in enc_dict.keys()])
+    times = enc[1]
 
-  results_lgr = pd.DataFrame([[key] + predict_it(enc_dict[key], 'lgr', 'target') for key in enc_dict.keys()])
-  print('half models fitted')
-  results_mlp = pd.DataFrame([[key] + predict_it(enc_dict[key], 'mlp', 'target') for key in enc_dict.keys()])
+    #modelling phase
+    results_nb = pd.DataFrame([[key] + predict_it(enc_dict[key], 'nb', 'target') for key in enc_dict.keys()])
 
-  results_knn = pd.DataFrame([[key] + predict_it(enc_dict[key], 'knn', 'target') for key in enc_dict.keys()])
+    results_rf = pd.DataFrame([[key] + predict_it(enc_dict[key], 'RF', 'target') for key in enc_dict.keys()])
 
-  results_dt = pd.DataFrame([[key] + predict_it(enc_dict[key], 'dt', 'target') for key in enc_dict.keys()])
+    results_svm = pd.DataFrame([[key] + predict_it(enc_dict[key], 'svm', 'target') for key in enc_dict.keys()])
 
-  results = pd.concat([results_nb, results_rf, results_mlp, results_knn, results_svm, results_lgr, results_dt])
-  results.columns = ['encoding', 'model', 'accuracy', 'precision', 'recall', 'F1', 'AUC']
-  print('Models fitted')
+    results_lgr = pd.DataFrame([[key] + predict_it(enc_dict[key], 'lgr', 'target') for key in enc_dict.keys()])
+    print('half models fitted')
+    results_mlp = pd.DataFrame([[key] + predict_it(enc_dict[key], 'mlp', 'target') for key in enc_dict.keys()])
 
-  #time evaluation
-  time_res = time_standard(times[['method','time']])
-  time_res['dim_fin'] = times['dim_fin']
+    results_knn = pd.DataFrame([[key] + predict_it(enc_dict[key], 'knn', 'target') for key in enc_dict.keys()])
 
-  return results, time_res
+    results_dt = pd.DataFrame([[key] + predict_it(enc_dict[key], 'dt', 'target') for key in enc_dict.keys()])
+
+    results = pd.concat([results_nb, results_rf, results_mlp, results_knn, results_svm, results_lgr, results_dt])
+    results.columns = ['encoding', 'model', 'accuracy', 'precision', 'recall', 'F1']
+    print('Models fitted')
+
+    #time evaluation
+    time_res = time_standard(times[['method','time']])
+    time_res['dim_fin'] = times['dim_fin']
+
+    return results, time_res
 
 def final_pip_regr(data):
-  cat_cols = column_types(data)[1]
+    """
+    Executes a pipeline for encoding categorical variables, training multiple regression models,
+    and evaluating their performance and time taken for encoding.
 
-  print('encoding categorical variables')
-  enc = encode_all(data, cat_cols, 'regr') #encoding datasets with different methods
-  print('Encoding done')
+    Parameters:
+    data (pd.DataFrame): The input DataFrame containing the data to be processed.
 
-  enc_dict = enc[0]
+    Returns:
+    tuple: A tuple containing:
+           - results (pd.DataFrame): A DataFrame with the performance metrics (mae, mse, rmse, nrmse, r2) for each model and encoding method.
+           - time_res (pd.DataFrame): A DataFrame with the standardized times for each encoding method along with their final dimensions.
+    """
 
-  times = enc[1]
+    cat_cols = column_types(data)[1]
 
-  #modelling phase
+    print('encoding categorical variables')
+    enc = encode_all(data, cat_cols, 'regr') #encoding datasets with different methods
+    print('Encoding done')
 
-  results_rf = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'RF', 'target') for key in enc_dict.keys()])
-  print("RF done")
-  results_svm = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'svm', 'target') for key in enc_dict.keys()])
+    enc_dict = enc[0]
 
-  results_lgr = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'lgr', 'target') for key in enc_dict.keys()])
-  print('half models fitted')
-  results_mlp = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'mlp', 'target') for key in enc_dict.keys()])
+    times = enc[1]
 
-  results_knn = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'knn', 'target') for key in enc_dict.keys()])
+    #modelling phase
 
-  results_dt = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'dt', 'target') for key in enc_dict.keys()])
+    results_rf = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'RF', 'target') for key in enc_dict.keys()])
+    print("RF done")
+    results_svm = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'svm', 'target') for key in enc_dict.keys()])
 
-  results = pd.concat([results_rf, results_mlp, results_knn, results_svm, results_lgr, results_dt])
-  results.columns = ['encoding', 'model', 'mae', 'mse', 'rmse', 'nrmse', 'r2']
-  print('Models fitted')
+    results_lgr = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'lgr', 'target') for key in enc_dict.keys()])
+    print('half models fitted')
+    results_mlp = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'mlp', 'target') for key in enc_dict.keys()])
 
-  #time evaluation
-  time_res = time_standard(times[['method','time']])
-  time_res['dim_fin'] = times['dim_fin']
+    results_knn = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'knn', 'target') for key in enc_dict.keys()])
 
-  return results, time_res
+    results_dt = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'dt', 'target') for key in enc_dict.keys()])
+
+    results = pd.concat([results_rf, results_mlp, results_knn, results_svm, results_lgr, results_dt])
+    results.columns = ['encoding', 'model', 'mae', 'mse', 'rmse', 'nrmse', 'r2']
+    print('Models fitted')
+
+    #time evaluation
+    time_res = time_standard(times[['method','time']])
+    time_res['dim_fin'] = times['dim_fin']
+
+    return results, time_res
+
+#Classification datasets importation
 
 datasets = []
 
@@ -802,17 +926,23 @@ datasets.append(pd.read_csv('../data_clean/class/nursery.csv'))
 names = ['mush', 'census', 'churn', 'credit', 'breast', 'autism', 'obesity', 'car', 'cmc', 'nursery'] #'census', 'mush', 'churn', 'credit', 'breast', 'autism', 
 d = dict(zip(names, datasets))
 
+#Experiment execution for classification datasets
+
 for name in d.keys():
   res = final_pip(d[name])
   res[0].to_csv(f'../results/res_class/metrics/results_{name}.csv', index=False)
   res[1].to_csv(f'../results/res_class/time/time_{name}.csv', index=False)
   print(f'{name} done')
 
+#Regression datasets importation
+
 filepaths = glob.glob('/home/clerici/tesi/regr/*.csv')
 
 all_dfs = [pd.read_csv(fp) for fp in filepaths]
 names = ['avocado','baseball', 'cmpc2015', 'forest', 'socmob', 'ukair'] 
 d = dict(zip(names, all_dfs))
+
+#Experiment execution for regression datasets
 
 for name in list(d.keys()):
   print(name)
