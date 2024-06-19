@@ -15,6 +15,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from scipy.stats import iqr
 import glob
 import category_encoders as ce
 import skrub
@@ -759,7 +760,6 @@ def predict_it_regr(data, model, target):
     mse = mean_squared_error(y_test, y_pred)
 
     rmse = mean_squared_error(y_test, y_pred, squared=False)
-    from scipy.stats import iqr
     nrmse = rmse / iqr(y_test)
     r2 = r2_score(y_test, y_pred)
 
