@@ -7,4 +7,4 @@ This repository contains the code and data used in the experiment "Evaluating Ca
 ## Run the experiment
 Execute the script `src/experiment.py`
 ## Result analysis
-Execute the code in the `analysis` directory
+Execute the code `src/res_analysis.ipynb`
