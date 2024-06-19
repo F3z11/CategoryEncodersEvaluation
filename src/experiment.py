@@ -636,134 +636,82 @@ def encode_all(df, cat_cols, tipo):
 """
 ### No parameter tuning"""
 
-def predict_it(data, model, target):
+def predict_it(data, task, target):
     """
-    Trains and evaluates a classification model on the given data.
+    Trains and evaluates a machine-learning models on the given data.
 
     Parameters:
     data (pd.DataFrame or list of pd.DataFrame): The dataset(s) to be used for training and testing.
-    model (str): The type of model to use.
+    task (bool): The type of machine-learning task; True indicates classification and False regression
     target (str): The name of the target column in the dataset.
 
     Returns:
-    list: A list containing:
-          - model (str): The name of the model used.
-          - accuracy (float): The accuracy of the model on the test set.
-          - precision (float): The precision of the model on the test set.
-          - recall (float): The recall of the model on the test set.
-          - f1 (float): The F1 score of the model on the test set.
+    pd.DataFrame: A dataframe containing the model and the relative performance metrics on test set 
     """
 
-    if model == 'RF':
-        mod = RandomForestClassifier(random_state=42)
-    elif model == 'svm':
-        mod = SVC(random_state=42)
-    elif model == 'lgr':
-        mod = LogisticRegression(random_state=42)
-    elif model == 'nb':
-        mod = GaussianNB()
-    elif model == 'mlp':
-        mod = MLPClassifier(random_state=42)
-    elif model == 'knn':
-        mod = KNeighborsClassifier()
-    elif model == 'dt':
-        mod = DecisionTreeClassifier()
-
-    clf = Pipeline(
-    steps=[('preprocessor',
-            StandardScaler()), ('classifier', mod)])
+    if task:
+        models = [
+            RandomForestClassifier(random_state=42),
+            SVC(random_state=42),
+            LogisticRegression(random_state=42), 
+            GaussianNB(), 
+            MLPClassifier(random_state=42), 
+            KNeighborsClassifier(), 
+            DecisionTreeClassifier()]
+        
+        results = pd.DataFrame(columns=['model', 'acc', 'prec', 'recall', 'f1'])
+    else:
+        models = [
+            RandomForestRegressor(random_state=42),
+            SVR(random_state=42),
+            LinearRegression(random_state=42),  
+            MLPRegressor(random_state=42), 
+            KNeighborsRegressor(), 
+            DecisionTreeRegressor()]
+        
+        results = pd.DataFrame(columns=['model', 'mae', 'mse', 'rmse', 'nrmse', 'r2'])
 
     if isinstance(data, list):
+        X_train = data[0][[col for col in data[0] if col != target]]
+        y_train = data[0][target]
 
-      X_train = data[0][[col for col in data[0] if col != target]]
-      y_train = data[0][target]
-
-      X_test = data[1][[col for col in data[1] if col != target]]
-      y_test = data[1][target]
-
-    else:
-
-      X = data[[col for col in data if col != target]]
-      y = data[target]
-
-      X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    X_test.fillna(y_train.mean(),inplace=True) #fillna only for decision tree encoder, no other dataset has missing values
-
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-
-    accuracy = accuracy_score(y_test, y_pred)
-    precision = precision_score(y_test, y_pred, zero_division=0, average='macro')
-    recall = recall_score(y_test, y_pred, zero_division=0, average='macro')
-    f1 = f1_score(y_test, y_pred, zero_division=0, average='macro')
-
-    return [model, accuracy, precision, recall, f1]
-
-def predict_it_regr(data, model, target):
-    """
-    Trains and evaluates a regression model on the given data.
-
-    Parameters:
-    data (pd.DataFrame or list of pd.DataFrame): The dataset(s) to be used for training and testing.
-    model (str): The type of model to use.
-    target (str): The name of the target column in the dataset.
-
-    Returns:
-    list: A list containing:
-          - model (str): The name of the model used.
-          - mae (float): The mean absolute error of the model on the test set.
-          - mse (float): The mean squared error of the model on the test set.
-          - rmse (float): The root mean squared error of the model on the test set.
-          - nrmse (float): The normalized root mean squared error of the model on the test set.
-          - r2 (float): The R-squared score of the model on the test set.
-    """
-
-    if model == 'RF':
-        mod = RandomForestRegressor(random_state=42)
-    elif model == 'svm':
-        mod = SVR(random_state=42)
-    elif model == 'lgr':
-        mod = LinearRegression(random_state=42)
-    elif model == 'mlp':
-        mod = MLPRegressor(random_state=42)
-    elif model == 'knn':
-        mod = KNeighborsRegressor()
-    elif model == 'dt':
-        mod = DecisionTreeRegressor()
-
-    clf = Pipeline(
-    steps=[('preprocessor',
-            StandardScaler()), ('regressor', mod)])
-
-    if isinstance(data, list):
-
-      X_train = data[0][[col for col in data[0] if col != target]]
-      y_train = data[0][target]
-
-      X_test = data[1][[col for col in data[1] if col != target]]
-      y_test = data[1][target]
+        X_test = data[1][[col for col in data[1] if col != target]]
+        y_test = data[1][target]
 
     else:
+        X = data[[col for col in data if col != target]]
+        y = data[target]
 
-      X = data[[col for col in data if col != target]]
-      y = data[target]
-
-      X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     X_test.fillna(y_train.mean(),inplace=True) #fillna only for decision tree encoder, no other dataset has missing values
+    
+    for model in models:
+        clf = Pipeline(
+        steps=[('preprocessor',
+                StandardScaler()), ('model', model)])
 
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
+        clf.fit(X_train, y_train)
+        y_pred = clf.predict(X_test)
 
-    mae = mean_absolute_error(y_test, y_pred)
-    mse = mean_squared_error(y_test, y_pred)
+        if task:
+            res_single = [
+                type(model).__name__,
+                accuracy_score(y_test, y_pred),
+                precision_score(y_test, y_pred, zero_division=0, average='macro'),
+                recall_score(y_test, y_pred, zero_division=0, average='macro'),
+                f1_score(y_test, y_pred, zero_division=0, average='macro')]
+        else:
+            res_single = [
+                type(model).__name__,
+                mean_absolute_error(y_test, y_pred),
+                mean_squared_error(y_test, y_pred),
+                mean_squared_error(y_test, y_pred, squared=False),
+                mean_squared_error(y_test, y_pred, squared=False) / iqr(y_test),
+                r2_score(y_test, y_pred)]
+        results.loc[len(results)] = res_single
 
-    rmse = mean_squared_error(y_test, y_pred, squared=False)
-    nrmse = rmse / iqr(y_test)
-    r2 = r2_score(y_test, y_pred)
-
-    return [model, mae, mse, rmse, nrmse, r2]
+    return results
 
 def time_standard(time_df):
     """
@@ -789,102 +737,48 @@ def time_standard(time_df):
 
 """## Pipeline finale"""
 
-def final_pip(data):
-    """
-    Executes a pipeline for encoding categorical variables, training multiple classification models,
+def final_pip(data, task):
+  """
+    Executes a pipeline for encoding categorical variables, training multiple models,
     and evaluating their performance and time taken for encoding.
 
     Parameters:
     data (pd.DataFrame): The input DataFrame containing the data to be processed.
+    task (bool): The type of machine-learning task; True indicates classification and False regression
 
     Returns:
     tuple: A tuple containing:
-           - results (pd.DataFrame): A DataFrame with the performance metrics (accuracy, precision, recall, F1) for each model and encoding method.
+           - res_all (pd.DataFrame): A DataFrame with the performance metrics for each model and encoding method.
            - time_res (pd.DataFrame): A DataFrame with the standardized times for each encoding method along with their final dimensions.
     """
+  
+  cat_cols = column_types(data)[1]
 
-    cat_cols = column_types(data)[1]
+  print('encoding categorical variables')
+  enc = encode_all(data, cat_cols, task) #encoding datasets with different methods
+  print('Encoding done')
 
-    print('encoding categorical variables')
-    enc = encode_all(data, cat_cols, 'class') #encoding datasets with different methods
-    print('Encoding done')
+  enc_dict = enc[0]
 
-    enc_dict = enc[0]
+  times = enc[1]
 
-    times = enc[1]
+  if task:
+    res_all = pd.DataFrame(columns=['encoding', 'model', 'acc', 'prec', 'recall', 'f1'])
+  else:
+    res_all = pd.DataFrame(columns=['encoding', 'model', 'mae', 'mse', 'rmse', 'nrmse', 'r2'])
 
-    #modelling phase
-    results_nb = pd.DataFrame([[key] + predict_it(enc_dict[key], 'nb', 'target') for key in enc_dict.keys()])
+  for encoder in enc_dict.keys():
+    res_encoder = predict_it(enc_dict[encoder], task, 'target')
+    res_encoder.insert(0, "encoding", encoder)
+    res_all = pd.concat([res_all, res_encoder], ignore_index=True)
 
-    results_rf = pd.DataFrame([[key] + predict_it(enc_dict[key], 'RF', 'target') for key in enc_dict.keys()])
+  print('Models fitted')
 
-    results_svm = pd.DataFrame([[key] + predict_it(enc_dict[key], 'svm', 'target') for key in enc_dict.keys()])
+  #time evaluation
+  time_res = time_standard(times[['method','time']])
+  time_res['dim_fin'] = times['dim_fin']
 
-    results_lgr = pd.DataFrame([[key] + predict_it(enc_dict[key], 'lgr', 'target') for key in enc_dict.keys()])
-    print('half models fitted')
-    results_mlp = pd.DataFrame([[key] + predict_it(enc_dict[key], 'mlp', 'target') for key in enc_dict.keys()])
-
-    results_knn = pd.DataFrame([[key] + predict_it(enc_dict[key], 'knn', 'target') for key in enc_dict.keys()])
-
-    results_dt = pd.DataFrame([[key] + predict_it(enc_dict[key], 'dt', 'target') for key in enc_dict.keys()])
-
-    results = pd.concat([results_nb, results_rf, results_mlp, results_knn, results_svm, results_lgr, results_dt])
-    results.columns = ['encoding', 'model', 'accuracy', 'precision', 'recall', 'F1']
-    print('Models fitted')
-
-    #time evaluation
-    time_res = time_standard(times[['method','time']])
-    time_res['dim_fin'] = times['dim_fin']
-
-    return results, time_res
-
-def final_pip_regr(data):
-    """
-    Executes a pipeline for encoding categorical variables, training multiple regression models,
-    and evaluating their performance and time taken for encoding.
-
-    Parameters:
-    data (pd.DataFrame): The input DataFrame containing the data to be processed.
-
-    Returns:
-    tuple: A tuple containing:
-           - results (pd.DataFrame): A DataFrame with the performance metrics (mae, mse, rmse, nrmse, r2) for each model and encoding method.
-           - time_res (pd.DataFrame): A DataFrame with the standardized times for each encoding method along with their final dimensions.
-    """
-
-    cat_cols = column_types(data)[1]
-
-    print('encoding categorical variables')
-    enc = encode_all(data, cat_cols, 'regr') #encoding datasets with different methods
-    print('Encoding done')
-
-    enc_dict = enc[0]
-
-    times = enc[1]
-
-    #modelling phase
-
-    results_rf = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'RF', 'target') for key in enc_dict.keys()])
-    print("RF done")
-    results_svm = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'svm', 'target') for key in enc_dict.keys()])
-
-    results_lgr = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'lgr', 'target') for key in enc_dict.keys()])
-    print('half models fitted')
-    results_mlp = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'mlp', 'target') for key in enc_dict.keys()])
-
-    results_knn = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'knn', 'target') for key in enc_dict.keys()])
-
-    results_dt = pd.DataFrame([[key] + predict_it_regr(enc_dict[key], 'dt', 'target') for key in enc_dict.keys()])
-
-    results = pd.concat([results_rf, results_mlp, results_knn, results_svm, results_lgr, results_dt])
-    results.columns = ['encoding', 'model', 'mae', 'mse', 'rmse', 'nrmse', 'r2']
-    print('Models fitted')
-
-    #time evaluation
-    time_res = time_standard(times[['method','time']])
-    time_res['dim_fin'] = times['dim_fin']
-
-    return results, time_res
+  return res_all, time_res
 
 #Classification datasets importation
 
@@ -929,7 +823,7 @@ d = dict(zip(names, datasets))
 #Experiment execution for classification datasets
 
 for name in d.keys():
-  res = final_pip(d[name])
+  res = final_pip(d[name], True)
   res[0].to_csv(f'../results/res_class/metrics/results_{name}.csv', index=False)
   res[1].to_csv(f'../results/res_class/time/time_{name}.csv', index=False)
   print(f'{name} done')
@@ -946,7 +840,7 @@ d = dict(zip(names, all_dfs))
 
 for name in list(d.keys()):
   print(name)
-  res = final_pip_regr(d[name])
+  res = final_pip(d[name], False)
   res[0].to_csv(f'../results/res_regr/metrics/results_{name}.csv', index=False)
   res[1].to_csv(f'../results/res_regr/time/time_{name}.csv', index=False)
   print(f'{name} done')
